@@ -2,12 +2,26 @@ if (typeof browser !== "undefined" && typeof chrome === "undefined") {
   var chrome = browser;
 }
 
+
+const DISTRACTING_HOSTS = [
+  "youtube.com", "youtu.be", "reddit.com", "twitter.com", "x.com",
+  "facebook.com", "instagram.com", "tiktok.com", "twitch.tv",
+  "9gag.com", "imgur.com", "pinterest.com", "tumblr.com",
+  "discord.com", "netflix.com", "primevideo.com",
+];
+
+function isDistractingPage() {
+  const host = location.hostname.replace(/^www\./, "");
+  return DISTRACTING_HOSTS.some(s => host === s || host.endsWith("." + s));
+}
+
+
 let overlayEl    = null;
 let bannerEl     = null;
 let shakeInterval= null;
 let currentLevel = -1;
 
-// ── On-load: restore gauntlet or jail if still active ────────────────────────
+
 
 (function checkOnLoad() {
   chrome.storage.local.get(["gauntletDeadline", "jailEndTime"], (data) => {
@@ -20,11 +34,12 @@ let currentLevel = -1;
   });
 })();
 
-// ── Message router ────────────────────────────────────────────────────────────
+
 
 chrome.runtime.onMessage.addListener((msg) => {
   switch (msg.type) {
     case "ESCALATE":
+      if (!isDistractingPage()) return;
       currentLevel = msg.level;
       showBanner(msg.message, msg.level);
       if (msg.level >= 2) showOverlay(msg.message, msg.level, msg.elapsed);
@@ -58,7 +73,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// ── Banner ────────────────────────────────────────────────────────────────────
+
 
 function showBanner(message, level) {
   removeBanner();
@@ -125,7 +140,7 @@ function removeBanner() {
   if (bannerEl) { bannerEl.remove(); bannerEl = null; }
 }
 
-// ── Overlay ───────────────────────────────────────────────────────────────────
+
 
 function showOverlay(message, level, elapsed) {
   removeOverlay();
@@ -182,7 +197,7 @@ function removeOverlay() {
   if (overlayEl) { overlayEl.remove(); overlayEl = null; }
 }
 
-// ── Nuclear 💀 ────────────────────────────────────────────────────────────────
+
 
 function goNuclear(message) {
   const backdrop = document.createElement("div");
@@ -206,7 +221,7 @@ function goNuclear(message) {
   }
 }
 
-// ── Screen shake ──────────────────────────────────────────────────────────────
+
 
 function startScreenShake() {
   if (shakeInterval) return;
@@ -226,7 +241,7 @@ function stopScreenShake() {
   if (document.body) document.body.style.transform = "";
 }
 
-// ── Cleanup ───────────────────────────────────────────────────────────────────
+
 
 function cleanup() {
   removeBanner();
@@ -238,25 +253,70 @@ function cleanup() {
   document.getElementById("__procrastino_styles__") && document.getElementById("__procrastino_styles__").remove();
 }
 
-// ── Gauntlet ──────────────────────────────────────────────────────────────────
 
-const QUESTIONS = [
-  { q: "Combien font 12 × 7 ?",                    a: "84",  difficulty: "facile"  },
+
+
+const QUESTION_BANK = [
+
+  { q: "Combien font 12 × 7 ?",               a: "84",   difficulty: "facile" },
+  { q: "Combien font 2 + 2 ?",                a: "4",    difficulty: "facile" },
+  { q: "Combien font 15 × 4 ?",               a: "60",   difficulty: "facile" },
+  { q: "Combien font 144 ÷ 12 ?",             a: "12",   difficulty: "facile" },
+  { q: "Combien font 9 × 9 ?",                a: "81",   difficulty: "facile" },
+  { q: "Combien font 7 × 8 ?",                a: "56",   difficulty: "facile" },
+  { q: "Combien font 100 - 37 ?",             a: "63",   difficulty: "facile" },
+  { q: "Combien font 6 × 7 ?",                a: "42",   difficulty: "facile" },
+  { q: "Quel est la racine carrée de 64 ?",   a: "8",    difficulty: "facile" },
+  { q: "Combien font 250 + 375 ?",            a: "625",  difficulty: "facile" },
+
   { q: "Un train roule à 80 km/h. En 2h30, quelle distance parcourt-il ?", a: "200", difficulty: "moyen" },
-  { q: "Si 3x + 7 = 22, quelle est la valeur de x ?", a: "5",  difficulty: "difficile" },
-  { q: "Combien font 2 + 2 ?",                     a: "4",   difficulty: "facile"  },
+  { q: "Si 3x + 7 = 22, quelle est la valeur de x ?",          a: "5",   difficulty: "moyen" },
+  { q: "Quel est 15% de 200 ?",                                  a: "30",  difficulty: "moyen" },
+  { q: "Si un article coûte 80€ après -20%, quel était le prix initial ?", a: "100", difficulty: "moyen" },
+  { q: "Combien font 2³ + 3² ?",                                 a: "17",  difficulty: "moyen" },
+  { q: "Quel est le PGCD de 24 et 36 ?",                         a: "12",  difficulty: "moyen" },
+  { q: "Si 5x - 3 = 17, quelle est la valeur de x ?",            a: "4",   difficulty: "moyen" },
+  { q: "Quel est 30% de 150 ?",                                   a: "45",  difficulty: "moyen" },
+  { q: "Combien de secondes dans 2 heures ?",                     a: "7200", difficulty: "moyen" },
+  { q: "Un rectangle a un périmètre de 28. Sa largeur est 6. Quelle est sa longueur ?", a: "8", difficulty: "moyen" },
+
+  { q: "Quel est le 7ème mois de l'année ?",                     a: "juillet",  difficulty: "facile" },
+  { q: "Combien de côtés a un octogone ?",                       a: "8",        difficulty: "facile" },
+  { q: "Combien de jours dans une année bissextile ?",           a: "366",      difficulty: "facile" },
+  { q: "Combien de lettres dans l'alphabet français ?",          a: "26",       difficulty: "facile" },
+  { q: "Dans quelle ville se trouve la Tour Eiffel ?",           a: "paris",    difficulty: "facile" },
+  { q: "Quel est le résultat de (4 + 6) × (3 - 1) ?",           a: "20",       difficulty: "moyen" },
+  { q: "Si tu as 3 paires de chaussettes, combien en as-tu ?",   a: "6",        difficulty: "facile" },
+  { q: "Quel animal dit 'miaou' ?",                              a: "chat",     difficulty: "facile" },
+  { q: "Combien font 17 × 3 ?",                                  a: "51",       difficulty: "facile" },
+  { q: "Quel est le carré de 13 ?",                              a: "169",      difficulty: "moyen" },
+
+  { q: "Combien de nombres premiers y a-t-il entre 1 et 20 ?",  a: "8",        difficulty: "difficile" },
+  { q: "Si f(x) = 2x² - 3x + 1, quel est f(3) ?",              a: "10",       difficulty: "difficile" },
+  { q: "Quel est le reste de 247 ÷ 7 ?",                        a: "2",        difficulty: "difficile" },
+  { q: "Combien font (2 + 3)² - (4 × 3) ?",                    a: "13",       difficulty: "difficile" },
 ];
+
+
+function pickQuestions() {
+  const shuffled = [...QUESTION_BANK].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 4);
+}
+
+let QUESTIONS = pickQuestions();
 
 let gauntletEl       = null;
 let gauntletStep     = 0;
 let gauntletTimerInterval = null;
 
 function showGauntlet(deadline) {
+  if (!isDistractingPage()) return;
   if (gauntletEl) { updateGauntletTimer(Math.max(0, deadline - Date.now())); return; }
   cleanup();
   injectStyles();
 
   gauntletStep = 0;
+  QUESTIONS = pickQuestions();
   gauntletEl   = document.createElement("div");
   gauntletEl.id = "__procrastino_gauntlet__";
   gauntletEl.style.cssText = "all:initial;position:fixed !important;inset:0 !important;z-index:2147483647 !important;background:#0d0d12 !important;display:flex !important;align-items:center !important;justify-content:center !important;font-family:'Segoe UI',system-ui,sans-serif !important;color:white !important;";
@@ -276,49 +336,49 @@ function renderGauntletStep(deadline) {
   const inner = document.createElement("div");
   inner.style.cssText = "all:initial;display:block;background:#1a1a24;border:1px solid #333;border-radius:16px;padding:36px 40px;max-width:500px;width:100%;box-sizing:border-box;box-shadow:0 20px 40px rgba(0,0,0,.5);text-align:center;";
 
-  // Difficulty badge color
+
   const diffColor = q.difficulty === "facile" ? "#30d158" : q.difficulty === "moyen" ? "#ff9500" : "#ff3b5c";
 
   inner.innerHTML =
-    // Header
+
     '<div style="font-size:36px;margin-bottom:10px;">🔒</div>' +
     '<div style="all:initial;display:block;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:6px;">Gauntlet des Procrastinateurs</div>' +
-    // Countdown
+
     '<div style="all:initial;display:block;font-size:11px;color:#555;margin-bottom:16px;">Temps restant : <span id="__pcg_timer__" style="color:#ff6b35;font-family:monospace;font-weight:700;">' + formatMs(remaining) + '</span></div>' +
-    // Progress
+
     '<div style="all:initial;display:flex;gap:6px;justify-content:center;margin-bottom:20px;">' +
       [0,1,2,3].map(i =>
         '<div style="all:initial;width:48px;height:6px;border-radius:3px;background:' + (i <= gauntletStep ? '#ff3b5c' : '#222') + ';display:block;"></div>'
       ).join('') +
     '</div>' +
-    // Question badge
+
     '<div style="all:initial;display:inline-block;background:' + diffColor + '22;border:1px solid ' + diffColor + '55;border-radius:20px;padding:3px 12px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:' + diffColor + ';margin-bottom:12px;">Question ' + (gauntletStep + 1) + ' / 4 — ' + q.difficulty + '</div>' +
-    // Question text
+
     '<div style="all:initial;display:block;font-size:18px;font-weight:700;color:#f0f0f5;margin-bottom:20px;line-height:1.5;">' + q.q + '</div>' +
-    // Input
+
     '<input id="__pcg_answer__" type="text" placeholder="Ta réponse..." ' +
       'style="all:initial;display:block;width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:12px 14px;color:white;font-family:monospace;font-size:16px;text-align:center;margin-bottom:14px;">' +
-    // Q4 payment note
+
     (isLast
       ? '<div style="all:initial;display:block;font-size:12px;color:#ff9500;margin-bottom:14px;background:#2d1b0022;border:1px solid #ff950044;border-radius:6px;padding:8px;">💳 La réponse est gratuite à penser — mais coûte <strong style="color:#ff9500;">10 €</strong> à soumettre.</div>'
       : '') +
-    // Submit button or payment form
+
     (isLast
       ? buildPaymentForm()
       : '<button id="__pcg_submit__" style="all:initial;display:block;width:100%;box-sizing:border-box;background:linear-gradient(135deg,#ff3b5c,#ff6b35);border:none;border-radius:8px;color:white;font-weight:700;font-size:15px;padding:14px;cursor:pointer;text-align:center;">Valider la réponse →</button>') +
-    // Feedback area
+
     '<div id="__pcg_feedback__" style="all:initial;display:block;min-height:18px;text-align:center;font-size:12px;margin-top:10px;"></div>';
 
   gauntletEl.innerHTML = "";
   gauntletEl.appendChild(inner);
 
-  // Live countdown
+
   gauntletTimerInterval = setInterval(() => {
     const el = document.getElementById("__pcg_timer__");
     if (el) el.textContent = formatMs(Math.max(0, deadline - Date.now()));
   }, 1000);
 
-  // Wire up submit or payment
+
   if (!isLast) {
     const submitBtn = document.getElementById("__pcg_submit__");
     if (submitBtn) {
@@ -402,7 +462,7 @@ function wirePaymentForm(deadline) {
       setTimeout(() => {
         setGauntletFeedback("🔄 Vérification de la carte...", "#aaa");
         setTimeout(() => {
-          // Verify Q4 answer after payment
+
           const answerInput = document.getElementById("__pcg_answer__");
           const userAnswer  = answerInput ? answerInput.value.trim() : "";
           if (userAnswer === QUESTIONS[3].a) {
@@ -462,12 +522,13 @@ function hideGauntlet() {
   if (gauntletEl) { gauntletEl.remove(); gauntletEl = null; }
 }
 
-// ── Jail ──────────────────────────────────────────────────────────────────────
+
 
 let jailEl = null;
 let jailTimerInterval = null;
 
 function showJail(jailEndTime) {
+  if (!isDistractingPage()) return;
   if (jailEl) { updateJailTimer(Math.max(0, jailEndTime - Date.now())); return; }
   hideGauntlet();
   cleanup();
@@ -507,7 +568,7 @@ function hideJail() {
   if (jailEl) { jailEl.remove(); jailEl = null; }
 }
 
-// ── CSS animations ────────────────────────────────────────────────────────────
+
 
 function injectStyles() {
   if (document.getElementById("__procrastino_styles__")) return;
@@ -524,7 +585,7 @@ function injectStyles() {
   document.documentElement.appendChild(style);
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 function formatMs(ms) {
   const totalSecs = Math.floor(ms / 1000);
@@ -532,3 +593,48 @@ function formatMs(ms) {
   const s = (totalSecs % 60).toString().padStart(2, "0");
   return m + ":" + s;
 }
+
+
+
+(function installSPASpy() {
+  if (!isDistractingPage()) return;
+
+  const notifyUrlChange = (url) => {
+    chrome.runtime.sendMessage({ type: "SPA_NAV", url }).catch(() => {});
+  };
+
+
+  const origPush    = history.pushState.bind(history);
+  const origReplace = history.replaceState.bind(history);
+
+  history.pushState = function(...args) {
+    origPush(...args);
+    notifyUrlChange(location.href);
+  };
+  history.replaceState = function(...args) {
+    origReplace(...args);
+    notifyUrlChange(location.href);
+  };
+
+
+  window.addEventListener("popstate", () => notifyUrlChange(location.href));
+
+
+  let lastTitle = document.title;
+  const titleObserver = new MutationObserver(() => {
+    if (document.title !== lastTitle) {
+      lastTitle = document.title;
+      notifyUrlChange(location.href);
+    }
+  });
+  const titleEl = document.querySelector("title");
+  if (titleEl) titleObserver.observe(titleEl, { childList: true });
+
+  else {
+    const headObserver = new MutationObserver(() => {
+      const t = document.querySelector("title");
+      if (t) { titleObserver.observe(t, { childList: true }); headObserver.disconnect(); }
+    });
+    headObserver.observe(document.head || document.documentElement, { childList: true });
+  }
+})();

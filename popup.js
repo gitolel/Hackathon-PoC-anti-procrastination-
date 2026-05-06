@@ -25,7 +25,7 @@ const jailTimerEl        = document.getElementById("jailTimer");
 const passCard           = document.getElementById("passCard");
 const passTimerEl        = document.getElementById("passTimer");
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+
 
 api.storage.local.get(["enabled", "userName", "workTask", "procrastinoMode"], (data) => {
   enabledToggle.checked = data.enabled || false;
@@ -38,13 +38,13 @@ api.storage.local.get(["enabled", "userName", "workTask", "procrastinoMode"], (d
 refreshState();
 setInterval(refreshState, 1000);
 
-// ── State polling ─────────────────────────────────────────────────────────────
+
 
 function refreshState() {
   api.runtime.sendMessage({ type: "GET_STATE" }, (res) => {
     if (api.runtime.lastError || !res) return;
 
-    // Active tabs
+
     const count = res.activeTabs || 0;
     statTabs.textContent = count;
     if (count > 0 && res.enabled) {
@@ -64,7 +64,7 @@ function refreshState() {
       activeTabsBox.classList.remove("visible");
     }
 
-    // Escalation bar
+
     const tabs = res.tabs || {};
     const maxLevel = Object.values(tabs).reduce((max, t) => Math.max(max, t.level || 0), -1);
     document.querySelectorAll(".step").forEach(el => {
@@ -72,7 +72,7 @@ function refreshState() {
       el.classList.toggle("active", l <= maxLevel && maxLevel >= 0);
     });
 
-    // Status cards
+
     const gauntletRemaining = res.gauntletRemaining || 0;
     const jailRemaining     = res.jailRemaining     || 0;
     const passRemaining     = res.passRemaining     || 0;
@@ -85,7 +85,7 @@ function refreshState() {
     if (jailRemaining > 0)     jailTimerEl.textContent     = formatMs(jailRemaining);
     if (passRemaining > 0)     passTimerEl.textContent     = formatMs(passRemaining);
 
-    // Active task panel
+
     api.storage.local.get(["workTask"], (data) => {
       if (data.workTask) {
         activeTaskControls.style.display = "block";
@@ -112,7 +112,7 @@ function formatMs(ms) {
   return m + ":" + s;
 }
 
-// ── Toggle ────────────────────────────────────────────────────────────────────
+
 
 enabledToggle.addEventListener("change", () => {
   const enabled = enabledToggle.checked;
@@ -126,7 +126,7 @@ function updateToggleUI(enabled) {
   statusLabel.textContent = enabled ? "Actif — Surveillance ON" : "Désactivé";
 }
 
-// ── Mode selector ─────────────────────────────────────────────────────────────
+
 
 const MODE_DESCS = {
   soft: "😊 Notifications et bannières uniquement. Aucun blocage.",
@@ -145,7 +145,7 @@ function setMode(mode, save) {
   }
 }
 
-// ── Save / Start task ─────────────────────────────────────────────────────────
+
 
 saveBtn.addEventListener("click", () => {
   const workTask = taskInput.value.trim();
@@ -161,7 +161,7 @@ saveBtn.addEventListener("click", () => {
   }
 });
 
-// ── Complete task ─────────────────────────────────────────────────────────────
+
 
 completeTaskBtn.addEventListener("click", () => {
   api.runtime.sendMessage({ type: "COMPLETE_TASK" }, () => {
@@ -171,7 +171,7 @@ completeTaskBtn.addEventListener("click", () => {
   });
 });
 
-// ── Test button ───────────────────────────────────────────────────────────────
+
 
 document.getElementById("testBtn").addEventListener("click", () => {
   api.runtime.sendMessage({ type: "TEST" });
@@ -180,14 +180,14 @@ document.getElementById("testBtn").addEventListener("click", () => {
   });
 });
 
-// ── Sites toggle ──────────────────────────────────────────────────────────────
+
 
 sitesToggle.addEventListener("click", () => {
   const open = sitesList.classList.toggle("open");
   sitesToggle.textContent = (open ? "▼" : "▶") + " Sites surveillés";
 });
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+
 
 function notify(msg) {
   savedNotice.textContent = msg;

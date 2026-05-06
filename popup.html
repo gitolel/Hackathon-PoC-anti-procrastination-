@@ -27,8 +27,16 @@
       color: var(--text);
       font-family: 'Inter', sans-serif;
       font-size: 13px;
-      overflow: hidden;
+      max-height: 580px;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
+
+    /* Scrollbar */
+    body::-webkit-scrollbar { width: 4px; }
+    body::-webkit-scrollbar-track { background: var(--bg); }
+    body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    body::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
     /* Header */
     .header {
@@ -36,7 +44,9 @@
       border-bottom: 1px solid var(--border);
       padding: 16px 18px 14px;
       position: relative;
-      overflow: hidden;
+      max-height: 580px;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     .header::before {
       content: '';

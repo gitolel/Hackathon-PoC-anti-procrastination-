@@ -66,7 +66,7 @@ let gauntletTriggered = false;
 
 const trackedTabs = {};
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+
 
 api.storage.local.get([
   "enabled", "userName", "workTask", "procrastinoMode",
@@ -95,7 +95,7 @@ api.storage.onChanged.addListener((changes) => {
 
 setInterval(checkGlobalState, 1000);
 
-// ── Global tick ───────────────────────────────────────────────────────────────
+
 
 function checkGlobalState() {
   if (!enabled) return;
@@ -118,7 +118,7 @@ function checkGlobalState() {
   }
 }
 
-// ── Gauntlet ──────────────────────────────────────────────────────────────────
+
 
 function triggerGauntlet() {
   if (gauntletTriggered) return;
@@ -171,7 +171,7 @@ function clearJail() {
   console.log("[ProcrastiNO] Jail ended — clean slate");
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 function isDistracting(url) {
   if (!url || url.startsWith("about:") || url.startsWith("moz-extension:") || url.startsWith("chrome-extension:")) return false;
@@ -216,7 +216,7 @@ function syncState() {
   api.storage.local.set({ activeTabs: snapshot });
 }
 
-// ── Tab tracking ──────────────────────────────────────────────────────────────
+
 
 function startTracking(tabId, url) {
   if (trackedTabs[tabId]) return;
@@ -289,7 +289,7 @@ function stopAll() {
   Object.keys(trackedTabs).forEach(id => stopTracking(parseInt(id)));
 }
 
-// ── Tab event listeners ───────────────────────────────────────────────────────
+
 
 api.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!enabled) return;
@@ -308,7 +308,42 @@ api.tabs.onActivated.addListener(({ tabId }) => {
   });
 });
 
-// ── Message router ────────────────────────────────────────────────────────────
+
+
+
+api.webNavigation.onHistoryStateUpdated.addListener((details) => {
+  if (!enabled) return;
+  if (details.frameId !== 0) return;
+  const tabId = details.tabId;
+  const url   = details.url;
+
+  console.log("[ProcrastiNO] SPA nav:", url);
+
+  if (isDistracting(url)) {
+    if (trackedTabs[tabId]) {
+
+
+      console.log("[ProcrastiNO] SPA — tab déjà suivi, URL changée, on continue");
+    } else {
+      startTracking(tabId, url);
+    }
+  } else {
+
+
+
+    stopTracking(tabId);
+  }
+});
+
+
+api.webNavigation.onReferenceFragmentUpdated.addListener((details) => {
+  if (!enabled || details.frameId !== 0) return;
+  if (isDistracting(details.url) && !trackedTabs[details.tabId]) {
+    startTracking(details.tabId, details.url);
+  }
+});
+
+
 
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
@@ -364,6 +399,21 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     procrastinoMode = msg.mode;
     api.storage.local.set({ procrastinoMode: msg.mode });
     sendResponse({ ok: true }); return true;
+  }
+
+  if (msg.type === "SPA_NAV") {
+    if (!enabled) return true;
+    const tabId = sender.tab?.id;
+    if (!tabId) return true;
+    const url = msg.url;
+    console.log("[ProcrastiNO] SPA_NAV from content:", url);
+    if (isDistracting(url)) {
+      if (!trackedTabs[tabId]) startTracking(tabId, url);
+
+    } else {
+      stopTracking(tabId);
+    }
+    return true;
   }
 
   if (msg.type === "TEST") {
